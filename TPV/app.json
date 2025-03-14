@@ -1,0 +1,34 @@
+{
+  "id": "7b186df8-2f44-4340-84ee-487e405e1799",
+  "name": "TPV",
+  "publisher": "Actio Procesos y Tecnología",
+  "version": "1.0.0.2",
+  "brief": "TPV",
+  "description": "TPV",
+  "privacyStatement": "http://www.actiobp.com",
+  "EULA": "http://www.actiobp.com",
+  "help": "http://www.actiobp.com",
+  "url": "http://www.actiobp.com",
+  "logo": "./Logo/ActioIcon.png",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "1.0.0.0",
+  "application": "25.0.0.0",
+  "idRanges": [
+    {
+      "from": 90500,
+      "to": 90599
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": false,
+    "includeSourceInSymbolFile": false
+  },
+  "runtime": "14.0",
+  "features": [
+    "NoImplicitWith",
+    "TranslationFile",
+    "NoPromotedActionProperties"
+  ]
+}
