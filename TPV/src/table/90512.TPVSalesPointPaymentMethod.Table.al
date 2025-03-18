@@ -67,6 +67,10 @@ table 90512 "TPV Sales Point Payment Method"
                     TestField("Direct Debit", true);
             end;
         }
+        field(8; "Applies Cash Payment Limit"; Boolean)
+        {
+            Caption = 'Cash Limit', Comment = 'ESP="Límite efectivo"';
+        }
     }
 
     keys

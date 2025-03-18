@@ -15,6 +15,10 @@ page 90506 "TPV Sales Point List"
                 field("Sales Point Code"; Rec."Sales Point Code") { }
 
                 field(Description; Rec.Description) { }
+
+                field("Responsibility Center"; Rec."Responsibility Center") { }
+
+                field("Journal Batch Name"; Rec."Journal Batch Name") { }
             }
         }
     }

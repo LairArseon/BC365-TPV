@@ -19,15 +19,17 @@ controladdin "TPV Payment Display"
 
     event ViewerReady()
 
-    event TriggerSelector(ElementID: Text; FromFieldNo: Integer; RelatedTableNo: Integer; RelatedFieldNo: Integer)
+    event TriggerSelector(ElementID: Text; FieldNo: Integer)
 
     event UpdateFieldValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
+
+    event Submit()
 
     #endregion
 
     #region Procedures
 
-    procedure LoadElement(ElementID: Text; Line: JsonArray)
+    procedure LoadElement(ElementID: Text; PaymentLine: JsonObject)
 
     procedure DisplayElement(ElementID: Text)
 

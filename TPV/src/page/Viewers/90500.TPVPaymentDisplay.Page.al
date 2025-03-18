@@ -1,11 +1,11 @@
 page 90500 "TPV Payment Display"
 {
     Caption = 'TPV Payment interface', Comment = 'ESP="Interfaz pagos TPV"';
-    DataCaptionFields = "Source Record";
+    DataCaptionFields = "Source Document";
     PageType = Card;
     ApplicationArea = All;
     UsageCategory = Administration;
-    SourceTable = "TPV Line Buffer";
+    SourceTable = "TPV Payment Line Buffer";
     SourceTableTemporary = true;
 
     layout
@@ -16,7 +16,7 @@ page 90500 "TPV Payment Display"
             {
                 trigger ViewerReady()
                 begin
-                    LoadFirstElement();
+                    LoadElement();
                 end;
 
                 trigger UpdateFieldValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
@@ -24,20 +24,33 @@ page 90500 "TPV Payment Display"
                     UpdateFieldDisplayValue(ElementID, FieldNo, NewValue);
                 end;
 
-                trigger TriggerSelector(ElementID: Text; FromFieldNo: Integer; RelatedTableNo: Integer; RelatedFieldNo: Integer)
+                trigger TriggerSelector(ElementID: Text; FieldNo: Integer)
                 var
                     NewValue: Text;
                 begin
-                    if GetNewValueFromRelatedRecord(ElementID, FromFieldNo, RelatedTableNo, RelatedFieldNo, NewValue) then
-                        UpdateFieldDisplayValue(ElementID, FromFieldNo, NewValue)
+                    if SelectValueFromRelatedRecord(ElementID, FieldNo, NewValue) then
+                        UpdateFieldDisplayValue(ElementID, FieldNo, NewValue)
                     else
-                        ThrowError(ElementID, FromFieldNo, '');
+                        ThrowError(ElementID, FieldNo, '');
+                end;
+
+                trigger Submit()
+                begin
+                    PostPayment();
                 end;
             }
         }
     }
 
-    local procedure LoadFirstElement()
+    var
+        DisplayDetailLines: JsonArray;
+
+    procedure AddDetailLines(DetailLines: JsonArray)
+    begin
+        DisplayDetailLines := DetailLines;
+    end;
+
+    local procedure LoadElement()
     var
         IsHandled: Boolean;
     begin
@@ -45,27 +58,30 @@ page 90500 "TPV Payment Display"
         if IsHandled then
             exit;
 
-        if Rec.FindFirst() then
-            LoadLine(Rec, Rec."Source Record");
+        LoadLine(Rec, Rec."Source Document");
 
         OnAfterLoadFirstElement();
     end;
 
-    local procedure LoadLine(var TPVBuffer: Record "TPV Line Buffer" temporary; RecordId: RecordId)
+    local procedure LoadLine(var TPVPaymentBuffer: Record "TPV Payment Line Buffer" temporary; RecordId: RecordId)
     var
+        PaymentLine: JsonObject;
         IsHandled: Boolean;
     begin
-        OnBeforeLoadElement(TPVBuffer, IsHandled);
+        OnBeforeLoadElement(TPVPaymentBuffer, IsHandled);
         if IsHandled then
             exit;
 
+        TPVPaymentBuffer.Serialize(PaymentLine);
+
         CurrPage.TPVLineDisplay.LoadElement(
-            Format(TPVBuffer."Source Record"),
-            TPVBuffer.SerializeLine(RecordId));
+            Format(TPVPaymentBuffer."Source Document"),
+            PaymentLine
+            );
 
         CurrPage.TPVLineDisplay.DisplayElement(Format(RecordId));
 
-        OnAfterLoadElement(TPVBuffer);
+        OnAfterLoadElement(TPVPaymentBuffer);
     end;
 
     local procedure UpdateFieldDisplayValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
@@ -81,23 +97,23 @@ page 90500 "TPV Payment Display"
         OnAfterUpdateFieldDisplayValue(ElementID, FieldNo, NewValue);
     end;
 
-    local procedure GetNewValueFromRelatedRecord(ElementID: Text; FromFieldNo: Integer; RelatedTableNo: Integer; RelatedFieldNo: Integer; var NewValue: Text) ValueChosen: Boolean
+    local procedure SelectValueFromRelatedRecord(ElementID: Text; FieldNo: Integer; var NewValue: Text) ValueChosen: Boolean
     var
         TPVDataManagement: Codeunit "TPV Data Management";
         IsHandled: Boolean;
     begin
-        OnBeforeGetNewValueFromRelatedRecord(ElementID, FromFieldNo, RelatedTableNo, RelatedFieldNo, NewValue, ValueChosen, IsHandled);
+        OnBeforeGetNewValueFromRelatedRecord(ElementID, FieldNo, NewValue, ValueChosen, IsHandled);
         if IsHandled then
             exit;
 
-        case FromFieldNo of
+        case FieldNo of
 
 
         end;
 
-        ThrowError(ElementID, FromFieldNo, '');
+        ThrowError(ElementID, FieldNo, '');
 
-        OnAfterGetNewValueFromRelatedRecord(ElementID, FromFieldNo, RelatedTableNo, RelatedFieldNo, NewValue, ValueChosen);
+        OnAfterGetNewValueFromRelatedRecord(ElementID, FieldNo, NewValue, ValueChosen);
     end;
 
     local procedure ThrowError(ElementID: Text; FromFieldNo: Integer; ErrorText: Text)
@@ -113,6 +129,23 @@ page 90500 "TPV Payment Display"
         OnAfterThrowError(ElementID, FromFieldNo, ErrorText);
     end;
 
+    local procedure PostPayment()
+    var
+        TPVPaymentProcess: Interface "TPV Payment Process";
+        ProcessImplementation: Enum "TPV Update Processing";
+        IsHandled: Boolean;
+    begin
+        ProcessImplementation := ProcessImplementation::"Payment Process";
+        OnBeforePostPayment(ProcessImplementation, IsHandled);
+        if IsHandled then
+            exit;
+
+        TPVPaymentProcess := ProcessImplementation;
+        TPVPaymentProcess.PostPaymentLine(Rec);
+
+        OnAfterPostPayment();
+    end;
+
     #region Integration Events
 
     [IntegrationEvent(false, false)]
@@ -126,12 +159,12 @@ page 90500 "TPV Payment Display"
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeLoadElement(var TPVBuffer: Record "TPV Line Buffer" temporary; var IsHandled: Boolean)
+    local procedure OnBeforeLoadElement(var TPVPaymentBuffer: Record "TPV Payment Line Buffer" temporary; var IsHandled: Boolean)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnAfterLoadElement(var TPVBuffer: Record "TPV Line Buffer" temporary)
+    local procedure OnAfterLoadElement(var TPVPaymentBuffer: Record "TPV Payment Line Buffer" temporary)
     begin
     end;
 
@@ -156,12 +189,22 @@ page 90500 "TPV Payment Display"
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeGetNewValueFromRelatedRecord(ElementID: Text; FromFieldNo: Integer; RelatedTableNo: Integer; RelatedFieldNo: Integer; NewValue: Text; var returnVar: Boolean; var IsHandled: Boolean)
+    local procedure OnBeforeGetNewValueFromRelatedRecord(ElementID: Text; FromFieldNo: Integer; NewValue: Text; var returnVar: Boolean; var IsHandled: Boolean)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnAfterGetNewValueFromRelatedRecord(ElementID: Text; FromFieldNo: Integer; RelatedTableNo: Integer; RelatedFieldNo: Integer; NewValue: Text; var returnVar: Boolean)
+    local procedure OnAfterGetNewValueFromRelatedRecord(ElementID: Text; FromFieldNo: Integer; NewValue: Text; var returnVar: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforePostPayment(var ProcessImplementation: Enum "TPV Update Processing"; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterPostPayment()
     begin
     end;
 

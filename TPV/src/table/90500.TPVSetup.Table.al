@@ -23,6 +23,20 @@ table 90500 "TPV Setup"
         {
             Caption = 'Simplified invoice limit', Comment = 'ESP="Límite factura simplificada"';
         }
+        field(6; "Journal Template Name"; Code[10])
+        {
+            Caption = 'TPV Payment Template', Comment = 'ESP="Libro registro pagos TPV"';
+            TableRelation = "Gen. Journal Template".Name where(Type = filter(Payments));
+        }
+        field(7; "Journal Batch Name"; Code[10])
+        {
+            Caption = 'General TPV Payment Batch', Comment = 'ESP="Sección general registro pagos TPV"';
+            TableRelation = "Gen. Journal Batch".Name where("Journal Template Name" = field("Journal Template Name"));
+        }
+        field(100; "TestSimplTransaction"; Boolean)
+        {
+            Caption = 'Test Simpl transaction', Comment = 'ESP="Prueba transaccion simpl"';
+        }
     }
 
     keys

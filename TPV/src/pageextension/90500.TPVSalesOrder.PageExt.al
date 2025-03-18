@@ -2,7 +2,13 @@ pageextension 90500 "TPV Sales Order" extends "Sales Order"
 {
     layout
     {
-        // Add changes to page layout here
+        addafter("Work Description")
+        {
+            field("Paid Amount"; Rec.CalculatePaidAmount())
+            {
+                ApplicationArea = All;
+            }
+        }
     }
 
     actions
@@ -18,19 +24,61 @@ pageextension 90500 "TPV Sales Order" extends "Sales Order"
 
                 trigger OnAction()
                 var
-                    tempTPVBuffer: Record "TPV Line Buffer" temporary;
+                    TPVPaymentLineBuffer: Record "TPV Payment Line Buffer";
+                    TPVDataManagement: Codeunit "TPV Data Management";
                     SalesLine: Record "Sales Line";
+                    PaymentOrder, OrderLine : JsonObject;
+                    OrderLines: JsonArray;
                     RecRef: RecordRef;
                 begin
+                    TPVPaymentLineBuffer.CreateLineFromSalesHeader(Rec);
+                    TPVPaymentLineBuffer.Serialize(PaymentOrder);
+
                     SalesLine.SetRange("Document Type", Rec."Document Type");
                     SalesLine.SetRange("Document No.", Rec."No.");
                     if SalesLine.FindSet() then
                         repeat
-                            RecRef.Get(SalesLine.RecordId);
-                            tempTPVBuffer.InsertLine(RecRef);
-                            Page.Run(Page::"TPV Payment Display", tempTPVBuffer);
-
+                            Clear(OrderLine);
+                            SalesLine.Serialize(OrderLine);
+                            OrderLines.Add(OrderLine);
                         until SalesLine.Next() = 0;
+
+                    TPVDataManagement.AddLines(PaymentOrder, OrderLines);
+
+                    Page.Run(Page::"TPV Payment Display", TPVPaymentLineBuffer)
+                end;
+            }
+            action(OpenBCTPV)
+            {
+                Caption = 'Open BC TPV', Comment = 'ESP="Abrir TPV BC"';
+                ApplicationArea = All;
+                Image = AmountByPeriod;
+                Visible = ShowTPV;
+
+                trigger OnAction()
+                var
+                    TPVPaymentLineBuffer: Record "TPV Payment Line Buffer";
+                    TPVDataManagement: Codeunit "TPV Data Management";
+                    SalesLine: Record "Sales Line";
+                    PaymentOrder, OrderLine : JsonObject;
+                    OrderLines: JsonArray;
+                    RecRef: RecordRef;
+                begin
+                    TPVPaymentLineBuffer.CreateLineFromSalesHeader(Rec);
+                    TPVPaymentLineBuffer.Serialize(PaymentOrder);
+
+                    SalesLine.SetRange("Document Type", Rec."Document Type");
+                    SalesLine.SetRange("Document No.", Rec."No.");
+                    if SalesLine.FindSet() then
+                        repeat
+                            Clear(OrderLine);
+                            SalesLine.Serialize(OrderLine);
+                            OrderLines.Add(OrderLine);
+                        until SalesLine.Next() = 0;
+
+                    TPVDataManagement.AddLines(PaymentOrder, OrderLines);
+
+                    Page.Run(Page::"TPV BC Payment", TPVPaymentLineBuffer)
                 end;
             }
         }

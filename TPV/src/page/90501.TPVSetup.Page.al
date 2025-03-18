@@ -16,22 +16,21 @@ page 90501 "TPV Setup"
                 field(Active; Rec.Active) { }
                 field("Exchange rates for FCY"; Rec."Exchange rates for FCY") { }
             }
-
             group(Limits)
             {
                 Caption = 'Limits', Comment = 'ESP="Límites"';
                 field("Cash Transaction Limit"; Rec."Cash Transaction Limit") { }
                 field("Simplified Invoice Limit"; Rec."Simplified Invoice Limit") { }
             }
-            part(TPVRecordSetup; "TPV Table Setup")
+            group(Posting)
             {
-                UpdatePropagation = Both;
+                Caption = 'Posting', Comment = 'ESP="Registro"';
+                field("Journal Template Name"; Rec."Journal Template Name") { }
+                field("Journal Batch Name"; Rec."Journal Batch Name") { }
             }
-            part(TPVFieldSetup; "TPV Field Setup List")
+            group(Test)
             {
-                UpdatePropagation = Both;
-                Provider = TPVRecordSetup;
-                SubPageLink = "Table No." = field("Table No.");
+                field(TestSimplTransaction; Rec.TestSimplTransaction) { }
             }
         }
     }
