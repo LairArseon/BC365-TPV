@@ -1,22 +1,34 @@
 Microsoft.Dynamics.NAV.InvokeExtensibilityMethod('ViewerReady', '');
 
-LoadedLines = [];
+CurrentLoadedElement = null;
 SourceElement = null;
 
-class Line {
+class LoadedElement {
     elementSource = null;
-    fields = [];
-    constructor(ElementSource, FieldArray) {
+    fields = null;
+    maskedFields = null;
+
+    constructor(ElementSource, Element) {
         this.elementSource = ElementSource;
-        FieldArray.forEach(Field => {
-            this.fields.push(Field)
+        this.fields = Element;
+    }
+
+    MaskFields(fieldMaskArray) {
+        const fieldMaskMap = new Map(fieldMaskArray.map(item => [item.FieldNo, item]));
+
+        // Merge properties based on FieldNo
+        const mergedArray = this.fields.map(field => {
+            const mask = fieldMaskMap.get(field.FieldNo);
+            return mask ? { ...field, ...mask } : field;
         });
+
+        this.maskedFields = mergedArray;
     }
 }
 
-function LoadElement(ElementSource, ElementPropertiesArray) {
-    LoadedLines.push(new Line(ElementSource, ElementPropertiesArray));
-    alert(JSON.stringify(LoadedLines))
+function LoadElement(ElementSource, Element) {
+    CurrentLoadedElement = new LoadedElement(ElementSource, Element);
+    alert(JSON.stringify(CurrentLoadedElement))
 }
 
 function GetSourceElement() {
@@ -31,23 +43,29 @@ function GetSourceElement() {
     return (SourceElement);
 }
 
-function FindElementBySource(ElementSource) {
-    return (array.find(item => item.elementSource === ElementSource));
-}
-
-function DisplayElement(ElementSource) {
-    DisplayElement = FindElementBySource(ElementSource);
+function DisplayElement(ElementSource, DisplayFields) {
     BaseBuildingBlock = GetSourceElement();
 
+    CurrentLoadedElement.MaskFields(DisplayFields);
+
+    alert(JSON.stringify(CurrentLoadedElement))
 
 }
 
 function ThrowError(ErrorText, FieldName) {
-    OcultarSpinner();
+    HideSpinner();
 
     alert(ErrorText);
     $(FieldName).val('');
     $(FieldName).css("borderColor", "red");
     $(FieldName).css("background-color", "lightcoral");
     $(FieldName).focus();
+}
+
+function ShowSpinner() {
+    $("#overlay").show();
+}
+
+function HideSpinner() {
+    $("#overlay").hide();
 }

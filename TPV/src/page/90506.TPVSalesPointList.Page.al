@@ -19,11 +19,19 @@ page 90506 "TPV Sales Point List"
                 field("Responsibility Center"; Rec."Responsibility Center") { }
 
                 field("Journal Batch Name"; Rec."Journal Batch Name") { }
+
+                field("Auto Post Payments"; Rec."Auto Post Payments") { }
             }
         }
     }
     actions
     {
+        area(Promoted)
+        {
+            actionref(TenderTypes_Ref; TenderTypes) { }
+
+            actionref(PaymentMethods_Ref; PaymentMethods) { }
+        }
         area(Processing)
         {
             action(TenderTypes)

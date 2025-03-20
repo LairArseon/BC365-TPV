@@ -50,6 +50,14 @@ table 90508 "TPV Posted Tender Line"
         {
             Caption = 'Remaining amount', Comment = 'ESP="Cantidad Restante"';
         }
+        field(13; "Remaining Amount"; Decimal)
+        {
+            Caption = 'Remaining monetary value', Comment = 'ESP="Valor monetario restante"';
+        }
+        field(14; "Remaining Amount (LCY)"; Decimal)
+        {
+            Caption = 'Remaining monetary amount (LCY)', Comment = 'ESP="Valor monetario restante (DL)"';
+        }
     }
 
     keys

@@ -15,7 +15,9 @@ page 90503 "TPV BC Cash Register Post"
                 field("No."; Rec."No.") { }
                 field(Description; Rec.Description) { }
                 field("Total Tender Amount (LCY)"; Rec."Total Tender Amount (LCY)") { }
+                field("Remaining Tender Amount (LCY)"; Rec."Remaining Tender Amount (LCY)") { }
                 field("Posting Date"; Rec."Posting Date") { }
+                field("Payment Terminal Amount"; Rec."Payment Terminal Amount") { }
             }
             part(TenderLines; "TPV BC Tender Line Part")
             {
@@ -106,9 +108,7 @@ page 90503 "TPV BC Cash Register Post"
         Rec.Validate("From Time", InitTime);
         Rec.Modify(true);
 
-        TPVPostedCashRegister.SetAscending("To Time", true);
         TPVPostedCashRegister.SetRange("No.", CashRegisterNo);
-        TPVPostedCashRegister.SetRange("Posting Date", CurrentDate);
         if TPVPostedCashRegister.FindLast() then
             if not TPVPostedCashRegister."Emptied on Post" then
                 TPVPostedCashRegister.ReactivatePostedTenderLines(Rec)

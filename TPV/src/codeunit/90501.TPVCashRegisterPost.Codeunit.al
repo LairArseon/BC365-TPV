@@ -45,21 +45,31 @@ codeunit 90501 "TPV Cash Register - Post"
         OnAfterFindTenderLinesToPost(PostingCashRegisterNo, TPVTenderLine);
     end;
 
-    local procedure PostCashRegister(Rec: Record "TPV Cash Register")
+    local procedure PostCashRegister(TPVCashRegister: Record "TPV Cash Register")
     var
         TPVPostedCashRegister: Record "TPV Posted Cash Register";
-        IsHandled: Boolean;
+        EmptiedOnPost, PartiallyEmptiedOnPost, IsHandled : Boolean;
     begin
-        OnBeforePostCashRegister(Rec, IsHandled);
+        OnBeforePostCashRegister(TPVCashRegister, IsHandled);
         if IsHandled then
             exit;
 
-        TPVPostedCashRegister.TransferFields(Rec);
+        TPVPostedCashRegister.CalcFields("Total Tender Amount", "Remaining Tender Amount");
+
+        if TPVPostedCashRegister."Remaining Tender Amount" < TPVPostedCashRegister."Total Tender Amount" then begin
+            PartiallyEmptiedOnPost := true;
+            if TPVPostedCashRegister."Remaining Tender Amount" = 0 then
+                EmptiedOnPost := true;
+        end;
+
+        TPVPostedCashRegister.TransferFields(TPVCashRegister);
         TPVPostedCashRegister.Validate("Posting Date", PostingDate);
         TPVPostedCashRegister.Validate("To Time", PostingTime);
+        TPVPostedCashRegister.Validate("Emptied on Post", EmptiedOnPost);
+        TPVPostedCashRegister.Validate("Partially Emptied on Post", PartiallyEmptiedOnPost);
         TPVPostedCashRegister.Insert(true);
 
-        DeleteCashRegisterAfterPosting(Rec);
+        DeleteCashRegisterAfterPosting(TPVCashRegister);
 
         OnAfterPostCashRegister(TPVPostedCashRegister);
     end;
@@ -111,12 +121,12 @@ codeunit 90501 "TPV Cash Register - Post"
     #region Integration Events
 
     [IntegrationEvent(false, false)]
-    local procedure OnCashRegisterPostingOnBeforePost(var Rec: Record "TPV Cash Register"; var PostingDate: Date; var PostingTime: Time)
+    local procedure OnCashRegisterPostingOnBeforePost(var TPVCashRegister: Record "TPV Cash Register"; var PostingDate: Date; var PostingTime: Time)
     begin
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforePostCashRegister(var Rec: Record "TPV Cash Register"; var IsHandled: Boolean)
+    local procedure OnBeforePostCashRegister(var TPVCashRegister: Record "TPV Cash Register"; var IsHandled: Boolean)
     begin
     end;
 
@@ -136,7 +146,7 @@ codeunit 90501 "TPV Cash Register - Post"
     end;
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeDeleteCashRegister(Rec: Record "TPV Cash Register"; var IsHandled: Boolean)
+    local procedure OnBeforeDeleteCashRegister(TPVCashRegister: Record "TPV Cash Register"; var IsHandled: Boolean)
     begin
     end;
 

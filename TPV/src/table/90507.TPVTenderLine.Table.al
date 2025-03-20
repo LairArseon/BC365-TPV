@@ -63,6 +63,23 @@ table 90507 "TPV Tender Line"
         field(12; "Remaining Quantity"; Decimal)
         {
             Caption = 'Remaining amount', Comment = 'ESP="Cantidad Restante"';
+
+            trigger OnValidate()
+            begin
+                Rec.TestField("Currency Code");
+                Rec.TestField("Tender Type");
+                Rec.TestField("Tender Code");
+
+                Rec.CalculateLineAmount();
+            end;
+        }
+        field(13; "Remaining Amount"; Decimal)
+        {
+            Caption = 'Remaining monetary value', Comment = 'ESP="Valor monetario restante"';
+        }
+        field(14; "Remaining Amount (LCY)"; Decimal)
+        {
+            Caption = 'Remaining monetary amount (LCY)', Comment = 'ESP="Valor monetario restante (DL)"';
         }
 
     }
@@ -98,6 +115,21 @@ table 90507 "TPV Tender Line"
     end;
 
     procedure CalculateLineAmount()
+    var
+        CurrencyTender: Record "TPV Currency-Tender";
+        IsHandled: Boolean;
+    begin
+        OnBeforeCalculateLineAmount(IsHandled);
+        if IsHandled then
+            exit;
+
+        CurrencyTender.Get(Rec."Currency Code", Rec."Tender Type", Rec."Tender Code");
+        Rec.Validate(Amount, Rec.Quantity * CurrencyTender."Tender Value");
+
+        OnAfterCalculateLineAmount();
+    end;
+
+    procedure CalculateLineRemainingAmount()
     var
         CurrencyTender: Record "TPV Currency-Tender";
         IsHandled: Boolean;

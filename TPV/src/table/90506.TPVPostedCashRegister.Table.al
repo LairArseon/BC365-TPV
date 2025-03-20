@@ -55,6 +55,24 @@ table 90506 "TPV Posted Cash Register"
                 "From Time" = field("From Time"),
                 "To Time" = field("To Time")));
         }
+        field(12; "Payment Terminal Amount"; Decimal)
+        {
+            Caption = 'Payment Terminal Total', Comment = 'ESP="Total Datáfono"';
+        }
+        field(13; "Remaining Tender Amount"; Decimal)
+        {
+            Caption = 'Remaining Amount', Comment = 'ESP="Cantidad restante"';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = sum("TPV Posted Tender Line"."Remaining Amount" where("Cash Register No." = field("No.")));
+        }
+        field(14; "Remaining Tender Amount (LCY)"; Decimal)
+        {
+            Caption = 'Remaining Amount (LCY)', Comment = 'ESP="Cantidad restante (DL)"';
+            FieldClass = FlowField;
+            Editable = false;
+            CalcFormula = sum("TPV Posted Tender Line"."Remaining Amount (LCY)" where("Cash Register No." = field("No.")));
+        }
     }
 
     keys

@@ -19,7 +19,7 @@ page 90500 "TPV Payment Display"
                     LoadElement();
                 end;
 
-                trigger UpdateFieldValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
+                trigger ValidateField(ElementID: Text; FieldNo: Integer; NewValue: Text)
                 begin
                     UpdateFieldDisplayValue(ElementID, FieldNo, NewValue);
                 end;
@@ -42,14 +42,6 @@ page 90500 "TPV Payment Display"
         }
     }
 
-    var
-        DisplayDetailLines: JsonArray;
-
-    procedure AddDetailLines(DetailLines: JsonArray)
-    begin
-        DisplayDetailLines := DetailLines;
-    end;
-
     local procedure LoadElement()
     var
         IsHandled: Boolean;
@@ -58,14 +50,16 @@ page 90500 "TPV Payment Display"
         if IsHandled then
             exit;
 
-        LoadLine(Rec, Rec."Source Document");
+        LoadElement(Rec, Rec."Source Document");
 
         OnAfterLoadFirstElement();
     end;
 
-    local procedure LoadLine(var TPVPaymentBuffer: Record "TPV Payment Line Buffer" temporary; RecordId: RecordId)
+    local procedure LoadElement(var TPVPaymentBuffer: Record "TPV Payment Line Buffer" temporary; RecordId: RecordId)
     var
+        TPVDataManagement: Codeunit "TPV Data Management";
         PaymentLine: JsonObject;
+        IncludedFields: JsonArray;
         IsHandled: Boolean;
     begin
         OnBeforeLoadElement(TPVPaymentBuffer, IsHandled);
@@ -73,15 +67,62 @@ page 90500 "TPV Payment Display"
             exit;
 
         TPVPaymentBuffer.Serialize(PaymentLine);
-
         CurrPage.TPVLineDisplay.LoadElement(
             Format(TPVPaymentBuffer."Source Document"),
-            PaymentLine
-            );
+            PaymentLine);
 
-        CurrPage.TPVLineDisplay.DisplayElement(Format(RecordId));
+        GetDisplayFields(IncludedFields);
+        CurrPage.TPVLineDisplay.DisplayElement(Format(RecordId), IncludedFields);
 
         OnAfterLoadElement(TPVPaymentBuffer);
+    end;
+
+    local procedure GetDisplayFields(var IncludedFields: JsonArray)
+    var
+        FieldMask: JsonObject;
+        IsHandled: Boolean;
+    begin
+        OnBeforeGetDisplayFields(IncludedFields, IsHandled);
+        if IsHandled then
+            exit;
+
+        AddDisplayField(IncludedFields, Rec.FieldNo("Account No."), false, false, 10);
+        AddDisplayField(IncludedFields, Rec.FieldNo(Description), true, false, 20);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Sales Point"), false, false, 30);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Payment Method"), false, true, 40);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Payment Reference"), false, false, 50);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Amount Total (Inc. VAT)"), false, false, 60);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Amount Due (Inc. VAT)"), false, false, 70);
+        AddDisplayField(IncludedFields, Rec.FieldNo("Amount Already Paid"), false, false, 80);
+        AddDisplayField(IncludedFields, Rec.FieldNo(Amount), true, false, 90);
+
+        OnAfterGetDisplayFields(IncludedFields);
+    end;
+
+    local procedure AddDisplayField(var FieldsArray: JsonArray; FieldNo: Integer; Editable: Boolean; AddSelector: Boolean; Position: Integer)
+    var
+        TPVDataManagement: Codeunit "TPV Data Management";
+        FieldObject: JsonObject;
+        IsHandled: Boolean;
+    begin
+        OnBeforeAddDisplayField(FieldNo, Editable, Position, IsHandled);
+        if IsHandled then
+            exit;
+
+        FieldsArray.Add(TPVDataManagement.CreateFieldDisplayMask(FieldNo, Editable, AddSelector, Position));
+    end;
+
+    [TryFunction]
+    local procedure ValidateField(ElementID: Text; FieldNo: Integer; NewValue: Text)
+    var
+        RecRef: RecordRef;
+        FieldRef: FieldRef;
+    begin
+        RecRef.Open(Rec.RecordId.TableNo);
+        RecRef.Copy(Rec, true);
+
+        FieldRef := RecRef.Field(FieldNo);
+        FieldRef.Validate(NewValue);
     end;
 
     local procedure UpdateFieldDisplayValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
@@ -92,7 +133,7 @@ page 90500 "TPV Payment Display"
         if IsHandled then
             exit;
 
-        CurrPage.TPVLineDisplay.UpdateFieldDisplayValue(ElementID, FieldNo, NewValue);
+        CurrPage.TPVLineDisplay.UpdateFieldValue(ElementID, FieldNo, NewValue);
 
         OnAfterUpdateFieldDisplayValue(ElementID, FieldNo, NewValue);
     end;
@@ -107,7 +148,10 @@ page 90500 "TPV Payment Display"
             exit;
 
         case FieldNo of
+            Rec.FieldNo("Payment Method"):
+                begin
 
+                end;
 
         end;
 
@@ -205,6 +249,21 @@ page 90500 "TPV Payment Display"
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterPostPayment()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeGetDisplayFields(IncludedFields: JsonArray; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterGetDisplayFields(IncludedFields: JsonArray)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeAddDisplayField(FieldNo: Integer; var Editable: Boolean; var Position: Integer; var IsHandled: Boolean)
     begin
     end;
 

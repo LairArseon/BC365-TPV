@@ -15,6 +15,20 @@
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,
             "schemaUpdateMode": "ForceSync"
-        }
+        },
+        {
+            "name": "Alberch Test",
+            "request": "launch",
+            "type": "al",
+            "environmentType": "Sandbox",
+            "environmentName": "TEST",
+            "tenant": "73b666eb-b1f6-4b24-8625-48adf3454c5b",
+            "startupObjectId": 22,
+            "startupObjectType": "Page",
+            "breakOnError": "ExcludeTry",
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true
+        },
     ]
 }

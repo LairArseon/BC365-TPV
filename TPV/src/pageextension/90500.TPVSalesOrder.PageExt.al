@@ -8,6 +8,14 @@ pageextension 90500 "TPV Sales Order" extends "Sales Order"
             {
                 ApplicationArea = All;
             }
+            field("Shipping No."; Rec."Shipping No.")
+            {
+                ApplicationArea = All;
+            }
+            field("Posting No."; Rec."Posting No.")
+            {
+                ApplicationArea = All;
+            }
         }
     }
 

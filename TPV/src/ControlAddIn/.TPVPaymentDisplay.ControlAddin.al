@@ -21,7 +21,7 @@ controladdin "TPV Payment Display"
 
     event TriggerSelector(ElementID: Text; FieldNo: Integer)
 
-    event UpdateFieldValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
+    event ValidateField(ElementID: Text; FieldNo: Integer; NewValue: Text)
 
     event Submit()
 
@@ -31,9 +31,9 @@ controladdin "TPV Payment Display"
 
     procedure LoadElement(ElementID: Text; PaymentLine: JsonObject)
 
-    procedure DisplayElement(ElementID: Text)
+    procedure DisplayElement(ElementID: Text; IncludedFields: JsonArray)
 
-    procedure UpdateFieldDisplayValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
+    procedure UpdateFieldValue(ElementID: Text; FieldNo: Integer; NewValue: Text)
 
     procedure ThrowError(ElementID: Text; FieldNo: Integer; ErrorText: Text)
 

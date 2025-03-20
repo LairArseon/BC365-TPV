@@ -30,6 +30,10 @@ table 90505 "TPV Sales Point"
             Caption = 'General TPV Payment Batch', Comment = 'ESP="Sección general registro pagos TPV"';
             TableRelation = "Gen. Journal Batch".Name where("Journal Template Name" = field("Journal Template Name"));
         }
+        field(6; "Auto Post Payments"; Boolean)
+        {
+            Caption = 'Auto-Post Payments', Comment = 'ESP="Auto-Registro Pagos"';
+        }
     }
 
     keys

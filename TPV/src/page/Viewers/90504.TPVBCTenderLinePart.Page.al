@@ -16,6 +16,7 @@ page 90504 "TPV BC Tender Line Part"
                 field("Tender Type"; Rec."Tender Type") { }
                 field("Tender Code"; Rec."Tender Code") { }
                 field(Quantity; Rec.Quantity) { }
+                field("Remaining Quantity"; Rec."Remaining Quantity") { }
                 field("Amount (LCY)"; Rec."Amount (LCY)") { }
             }
         }

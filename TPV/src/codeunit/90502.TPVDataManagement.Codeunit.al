@@ -39,4 +39,15 @@ codeunit 90502 "TPV Data Management"
     begin
         ParentObject.Add('lines', LinesToAdd)
     end;
+
+    /// <summary>
+    /// Creates an Object that represents the display status of a field
+    /// </summary>
+    procedure CreateFieldDisplayMask(FieldNo: Integer; Editable: Boolean; AddSelector: Boolean; Position: Integer) FieldMaskObject: JsonObject
+    begin
+        FieldMaskObject.Add('FieldNo', FieldNo);
+        FieldMaskObject.Add('Editable', Editable);
+        FieldMaskObject.Add('Selector', AddSelector);
+        FieldMaskObject.Add('Position', Position);
+    end;
 }
