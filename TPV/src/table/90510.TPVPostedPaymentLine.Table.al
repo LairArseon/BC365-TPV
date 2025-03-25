@@ -72,7 +72,14 @@ table 90510 "TPV Posted Payment Line"
         {
             Caption = 'Description', Comment = 'ESP="Descripción"';
         }
-
+        field(17; "Simplified transaction"; Boolean)
+        {
+            Caption = 'Simplified transaction', Comment = 'ESP="Transacción simplificada"';
+        }
+        field(18; Refund; Boolean)
+        {
+            Caption = 'Reimbursement', Comment = 'ESP="Reembolso"';
+        }
     }
 
     keys

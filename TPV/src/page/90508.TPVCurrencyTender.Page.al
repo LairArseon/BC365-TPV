@@ -3,7 +3,7 @@ page 90508 "TPV Currency - Tender"
     Caption = 'Tender types', Comment = 'ESP="Tipos efectivo"';
     PageType = List;
     ApplicationArea = All;
-    UsageCategory = Administration;
+    UsageCategory = None;
     SourceTable = "TPV Currency-Tender";
 
     layout

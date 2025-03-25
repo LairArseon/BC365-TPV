@@ -13,11 +13,15 @@ page 90503 "TPV BC Cash Register Post"
             group(GroupName)
             {
                 field("No."; Rec."No.") { }
-                field(Description; Rec.Description) { }
+                field(Description; Rec.Description)
+                {
+                    MultiLine = true;
+                }
                 field("Total Tender Amount (LCY)"; Rec."Total Tender Amount (LCY)") { }
                 field("Remaining Tender Amount (LCY)"; Rec."Remaining Tender Amount (LCY)") { }
                 field("Posting Date"; Rec."Posting Date") { }
                 field("Payment Terminal Amount"; Rec."Payment Terminal Amount") { }
+                field("Paid Terminal Amount"; Rec.CalcTerminalPaymetsTotal()) { }
             }
             part(TenderLines; "TPV BC Tender Line Part")
             {
@@ -30,10 +34,19 @@ page 90503 "TPV BC Cash Register Post"
 
     actions
     {
+        area(Promoted)
+        {
+            actionref(Post_Ref; Post) { }
+        }
+
         area(Processing)
         {
             action(Post)
             {
+                Caption = 'Post', Comment = 'ESP="Registrar"';
+                Image = PostedPayment;
+                ApplicationArea = All;
+
                 trigger OnAction()
                 begin
                     PostCashRegister();
@@ -53,9 +66,13 @@ page 90503 "TPV BC Cash Register Post"
 
     procedure SelectCashRegister() CashRegisterCode: Code[20]
     var
+        UserSetup: Record "User Setup";
         TPVSalesPoint: Record "TPV Sales Point";
         TPVCashRegisterList: Page "TPV Sales Point List";
     begin
+        UserSetup.Get(UserId);
+        TPVSalesPoint.SetRange("Responsibility Center", UserSetup."TPV Resp. Center Filter");
+        TPVCashRegisterList.SetTableView(TPVSalesPoint);
         TPVCashRegisterList.LookupMode(true);
         if TPVCashRegisterList.RunModal() <> Action::LookupOK then
             Error('');

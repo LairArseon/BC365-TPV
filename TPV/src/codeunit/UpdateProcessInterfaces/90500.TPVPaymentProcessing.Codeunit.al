@@ -10,7 +10,12 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
     procedure PostPaymentLine(var TPVPaymentLineBuffer: Record "TPV Payment Line Buffer" temporary)
     var
         TPVSalesPoint: Record "TPV Sales Point";
+        IsHandled: Boolean;
     begin
+        OnBeforePostPaymentLine(TPVPaymentLineBuffer, IsHandled);
+        if IsHandled then
+            exit;
+
         TPVPaymentLineBuffer.TestField("Payment Method");
         TPVPaymentLineBuffer.TestField(Amount);
 
@@ -57,8 +62,8 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         if IsHandled then
             exit;
 
-        InitGenJnlLine(GenJournalLine, TPVPaymentLineBuffer);
         CorrectSign(TPVPaymentLineBuffer);
+        InitGenJnlLine(GenJournalLine, TPVPaymentLineBuffer);
 
         case TPVPaymentLineBuffer."Payment Direction" of
             Enum::"TPV Payment Direction"::Inbound:
@@ -97,8 +102,8 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         if IsHandled then
             exit;
 
-        InitGenJnlLine(GenJournalLine, TPVPaymentLineBuffer);
         CorrectSign(TPVPaymentLineBuffer);
+        InitGenJnlLine(GenJournalLine, TPVPaymentLineBuffer);
 
         case TPVPaymentLineBuffer."Payment Direction" of
             Enum::"TPV Payment Direction"::Inbound:
@@ -154,7 +159,10 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         GenJournalLine.Validate("Journal Template Name", GenJnlTemplateName);
         GenJournalLine.Validate("Journal Batch Name", GenJnlBatchName);
         GenJournalLine.Validate("Line No.", GenJnlLineNo);
-        GenJournalLine.Validate("Document Type", Enum::"Gen. Journal Document Type"::Payment);
+        if TPVPaymentLineBuffer.Refund then
+            GenJournalLine.Validate("Document Type", Enum::"Gen. Journal Document Type"::Refund)
+        else
+            GenJournalLine.Validate("Document Type", Enum::"Gen. Journal Document Type"::Payment);
         GenJournalLine."Posting Date" := WorkDate();
         GenJournalLine."Document Date" := WorkDate();
         GenJournalLine."VAT Reporting Date" := GeneralLedgerSetup.GetVATDate(GenJournalLine."Posting Date", GenJournalLine."Document Date");
@@ -194,11 +202,13 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         if (TPVPaymentLineBuffer."Payment Direction" = Enum::"TPV Payment Direction"::Inbound) and (TPVPaymentLineBuffer.Amount < 0) then begin
             TPVPaymentLineBuffer."Payment Direction" := Enum::"TPV Payment Direction"::Outbound;
             TPVPaymentLineBuffer.Amount := Abs(TPVPaymentLineBuffer.Amount);
+            TPVPaymentLineBuffer.Refund := true;
         end;
 
         if (TPVPaymentLineBuffer."Payment Direction" = Enum::"TPV Payment Direction"::Outbound) and (TPVPaymentLineBuffer.Amount < 0) then begin
             TPVPaymentLineBuffer."Payment Direction" := Enum::"TPV Payment Direction"::Inbound;
             TPVPaymentLineBuffer.Amount := Abs(TPVPaymentLineBuffer.Amount);
+            TPVPaymentLineBuffer.Refund := true;
         end;
 
         OnAfterCorrectSign(TPVPaymentLineBuffer);
@@ -241,6 +251,7 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
     /// </summary>
     local procedure PostJournalLinesIfRequired(var TPVPaymentLineBuffer: Record "TPV Payment Line Buffer" temporary)
     var
+        TPVPaymentPostEventBinding: Codeunit "TPV Payment-Post Event Binding";
         GenJournalLine: Record "Gen. Journal Line";
         TPVSalesPoint: Record "TPV Sales Point";
         IsHandled: Boolean;
@@ -249,6 +260,8 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         if IsHandled then
             exit;
 
+        BindSubscription(TPVPaymentPostEventBinding);
+
         TPVSalesPoint.Get(TPVPaymentLineBuffer."Sales Point");
         if not TPVSalesPoint."Auto Post Payments" then
             exit;
@@ -256,6 +269,8 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
         GenJournalLine.SetRange("Payment Reference", TPVPaymentLineBuffer."Payment Reference");
         if GenJournalLine.FindSet() then
             GenJournalLine.SendToPosting(Codeunit::"Gen. Jnl.-Post");
+
+        UnbindSubscription(TPVPaymentPostEventBinding);
 
         OnAfterPostJournalLinesIfRequired(TPVPaymentLineBuffer);
     end;
@@ -324,6 +339,11 @@ codeunit 90500 "TPV Payment Processing" implements "TPV Payment Process"
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterCorrectSign(var TPVPaymentLineBuffer: Record "TPV Payment Line Buffer" temporary)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforePostPaymentLine(var TPVPaymentLineBuffer: Record "TPV Payment Line Buffer" temporary; var IsHandled: Boolean)
     begin
     end;
 

@@ -3,7 +3,7 @@ page 90512 "TPV Posted Cash Registers"
     Caption = 'TPV Posted Cash Registers', Comment = 'ESP="Cajas Registradas TPV"';
     PageType = List;
     ApplicationArea = All;
-    UsageCategory = Administration;
+    UsageCategory = History;
     SourceTable = "TPV Posted Cash Register";
     // Editable = false; // TODO
 

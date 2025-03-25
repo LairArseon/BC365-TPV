@@ -3,7 +3,7 @@ page 90514 "TPV Posted Tender Lines"
     Caption = 'Posted Tender Lines', Comment = 'ESP="Lineas Efectivo registradas"';
     PageType = List;
     ApplicationArea = All;
-    UsageCategory = Administration;
+    UsageCategory = History;
     SourceTable = "TPV Posted Tender Line";
 
     layout

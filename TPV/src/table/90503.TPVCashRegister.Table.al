@@ -25,9 +25,9 @@ table 90503 "TPV Cash Register"
         {
             Caption = 'Empty when posting', Comment = 'ESP="Vaciar al registrar"';
         }
-        field(6; Description; Text[100])
+        field(6; Description; Text[250])
         {
-            Caption = 'Description', Comment = 'ESP="Descripción"';
+            Caption = 'Details', Comment = 'ESP="Observaciones"';
         }
         field(7; "Partially Emptied on Post"; Boolean)
         {
@@ -88,4 +88,50 @@ table 90503 "TPV Cash Register"
         RecRef.Get(Rec.RecordId);
         TPVDataManagement.Serialize(RecRef, CashRegisterJson);
     end;
+
+    procedure CalcTerminalPaymetsTotal() TotalPaid: Decimal
+    var
+        TPVSalesPointPaymentMethod: Record "TPV Sales Point Payment Method";
+        TPVPostedPaymentLine: Record "TPV Posted Payment Line";
+        TerminalPaymentFilter: Text;
+        IsHandled: Boolean;
+    begin
+        OnBeforeCalcTerminalPaymetsTotal(TotalPaid, IsHandled);
+        if IsHandled then
+            exit;
+
+        TPVSalesPointPaymentMethod.SetRange("Sales Point Code", Rec."No.");
+        TPVSalesPointPaymentMethod.SetRange("Uses Payment Terminal", true);
+        if TPVSalesPointPaymentMethod.IsEmpty then
+            exit;
+        TPVSalesPointPaymentMethod.FindSet();
+        repeat
+            TerminalPaymentFilter += TPVSalesPointPaymentMethod."Payment Method Code" + '|';
+        until TPVSalesPointPaymentMethod.Next() = 0;
+        TerminalPaymentFilter := TerminalPaymentFilter.TrimEnd('|');
+
+        TPVPostedPaymentLine.SetRange("Sales Point", Rec."No.");
+        TPVPostedPaymentLine.SetRange("Posting Date", Rec."Posting Date");
+        TPVPostedPaymentLine.SetRange("Posting Time", Rec."From Time", Time());
+        TPVPostedPaymentLine.SetFilter("Payment Method", TerminalPaymentFilter);
+        TPVPostedPaymentLine.CalcSums("Amount Paid");
+        TotalPaid := TPVPostedPaymentLine."Amount Paid";
+
+        OnAfterCalcTerminalPaymetsTotal(TotalPaid);
+    end;
+
+    #region Integration Events
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeCalcTerminalPaymetsTotal(var TotalPaid: Decimal; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCalcTerminalPaymetsTotal(var TotalPaid: Decimal)
+    begin
+    end;
+
+    #endregion Integration Events
+
 }

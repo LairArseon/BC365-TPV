@@ -3,7 +3,7 @@ page 90505 "TPV Cash Reg. Post. Display"
     Caption = 'TPV Cash Register Posting', Comment = 'ESP="Registro de Caja TPV"';
     PageType = Card;
     ApplicationArea = All;
-    UsageCategory = Administration;
+    UsageCategory = None;
     SourceTable = "TPV Cash Register";
 
     layout

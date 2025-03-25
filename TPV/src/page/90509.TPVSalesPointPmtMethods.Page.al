@@ -16,6 +16,7 @@ page 90509 "TPV Sales Point Pmt. Methods"
                 field("Payment Method Code"; Rec."Payment Method Code") { }
                 field(Description; Rec.Description) { }
                 field("Applies Cash Payment Limit"; Rec."Applies Cash Payment Limit") { }
+                field("Uses Payment Terminal"; Rec."Uses Payment Terminal") { }
                 field("Bal. Account Type"; Rec."Bal. Account Type") { }
                 field("Bal. Account No."; Rec."Bal. Account No.") { }
                 field("Direct Debit"; Rec."Direct Debit") { }

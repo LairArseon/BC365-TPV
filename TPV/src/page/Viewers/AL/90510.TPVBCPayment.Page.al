@@ -35,10 +35,18 @@ page 90510 "TPV BC Payment"
 
     actions
     {
+        area(Promoted)
+        {
+            actionref(PostPaymentAct_Ref; PostPaymentAct) { }
+        }
+
         area(Processing)
         {
             action(PostPaymentAct)
             {
+                Caption = 'Post', Comment = 'ESP="Registrar"';
+                Image = PostedPayment;
+                ApplicationArea = All;
 
                 trigger OnAction()
                 begin

@@ -4,7 +4,7 @@ page 90500 "TPV Payment Display"
     DataCaptionFields = "Source Document";
     PageType = Card;
     ApplicationArea = All;
-    UsageCategory = Administration;
+    UsageCategory = None;
     SourceTable = "TPV Payment Line Buffer";
     SourceTableTemporary = true;
 

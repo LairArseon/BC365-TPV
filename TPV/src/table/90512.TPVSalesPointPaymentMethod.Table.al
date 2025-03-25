@@ -71,6 +71,10 @@ table 90512 "TPV Sales Point Payment Method"
         {
             Caption = 'Cash Limit', Comment = 'ESP="Límite efectivo"';
         }
+        field(9; "Uses Payment Terminal"; Boolean)
+        {
+            Caption = 'Uses Payment Terminal', Comment = 'ESP="Usa Datáfono"';
+        }
     }
 
     keys

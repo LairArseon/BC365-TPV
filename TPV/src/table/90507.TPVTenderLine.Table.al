@@ -62,7 +62,7 @@ table 90507 "TPV Tender Line"
         }
         field(12; "Remaining Quantity"; Decimal)
         {
-            Caption = 'Remaining amount', Comment = 'ESP="Cantidad Restante"';
+            Caption = 'Leftover Cash', Comment = 'ESP="Fondo Caja"';
 
             trigger OnValidate()
             begin
@@ -70,7 +70,7 @@ table 90507 "TPV Tender Line"
                 Rec.TestField("Tender Type");
                 Rec.TestField("Tender Code");
 
-                Rec.CalculateLineAmount();
+                Rec.CalculateLineRemainingAmount();
             end;
         }
         field(13; "Remaining Amount"; Decimal)
@@ -134,14 +134,14 @@ table 90507 "TPV Tender Line"
         CurrencyTender: Record "TPV Currency-Tender";
         IsHandled: Boolean;
     begin
-        OnBeforeCalculateLineAmount(IsHandled);
+        OnBeforeCalculateLineRemainingAmount(IsHandled);
         if IsHandled then
             exit;
 
         CurrencyTender.Get(Rec."Currency Code", Rec."Tender Type", Rec."Tender Code");
-        Rec.Validate(Amount, Rec.Quantity * CurrencyTender."Tender Value");
+        Rec.Validate("Remaining Amount", Rec.Quantity * CurrencyTender."Tender Value");
 
-        OnAfterCalculateLineAmount();
+        OnAfterCalculateLineRemainingAmount();
     end;
 
     procedure CalculateLCYAmount()
@@ -172,6 +172,36 @@ table 90507 "TPV Tender Line"
         Rec.Validate("Amount (LCY)", AmountLCY);
 
         OnAfterCalculateLCYAmount();
+    end;
+
+    procedure CalculateLCYRemainingAmount()
+    var
+        TPVSetup: Record "TPV Setup";
+        GeneralLedgerSetup: Record "General Ledger Setup";
+        CurrencyExchangeRate: Record "Currency Exchange Rate";
+        CurrencyExchangeFactor, RemainingAmountLCY : Decimal;
+        IsHandled: Boolean;
+    begin
+        OnBeforeCalculateRemainingLCYAmount(IsHandled);
+        if IsHandled then
+            exit;
+
+        GeneralLedgerSetup.Get();
+        if Rec."Currency Code" = GeneralLedgerSetup.GetCurrencyCode('') then begin
+            Rec."Remaining Amount (LCY)" := Rec."Remaining Amount";
+            exit;
+        end;
+
+        TPVSetup.Get();
+        if not TPVSetup."Exchange rates for FCY" then
+            exit;
+
+        CurrencyExchangeFactor := CurrencyExchangeRate.GetCurrentCurrencyFactor(Rec."Currency Code");
+        RemainingAmountLCY := CurrencyExchangeRate.ExchangeAmtFCYToLCY(Rec."Posting Date", Rec."Currency Code", Rec."Remaining Amount", CurrencyExchangeFactor);
+
+        Rec.Validate("Remaining Amount (LCY)", RemainingAmountLCY);
+
+        OnAfterCalculateRemainingLCYAmount();
     end;
 
     procedure CheckActiveLines(CashRegisterNo: Code[20]) HasActiveLines: Boolean
@@ -267,12 +297,32 @@ table 90507 "TPV Tender Line"
     end;
 
     [IntegrationEvent(false, false)]
+    local procedure OnBeforeCalculateLineRemainingAmount(var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCalculateLineRemainingAmount()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
     local procedure OnBeforeCalculateLCYAmount(var IsHandled: Boolean)
     begin
     end;
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterCalculateLCYAmount()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeCalculateRemainingLCYAmount(var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCalculateRemainingLCYAmount()
     begin
     end;
 

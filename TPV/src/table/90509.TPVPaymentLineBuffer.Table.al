@@ -87,6 +87,10 @@ table 90509 "TPV Payment Line Buffer"
         {
             Caption = 'Simplified transaction', Comment = 'ESP="Transacción simplificada"';
         }
+        field(18; Refund; Boolean)
+        {
+            Caption = 'Reimbursement', Comment = 'ESP="Reembolso"';
+        }
     }
 
     keys
