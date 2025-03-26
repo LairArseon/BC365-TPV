@@ -1,7 +1,6 @@
 codeunit 90504 "TPV Payment-Post Event Binding"
 {
     EventSubscriberInstance = Manual;
-    SingleInstance = true;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Gen. Jnl.-Post", OnBeforeCode, '', false, false)]
     local procedure "Gen. Jnl.-Post_OnBeforeCode"(var HideDialog: Boolean)

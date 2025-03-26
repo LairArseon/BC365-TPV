@@ -122,9 +122,15 @@ table 90509 "TPV Payment Line Buffer"
 
         case SalesHeader."Document Type" of
             Enum::"Sales Document Type"::"Blanket Order", Enum::"Sales Document Type"::Invoice, Enum::"Sales Document Type"::Order, Enum::"Sales Document Type"::Quote:
-                Rec.Validate("Payment Direction", Enum::"TPV Payment Direction"::Inbound);
+                begin
+                    Rec.Validate("Payment Direction", Enum::"TPV Payment Direction"::Inbound);
+                    Rec.Validate(Refund, false);
+                end;
             Enum::"Sales Document Type"::"Credit Memo", Enum::"Sales Document Type"::"Return Order":
-                Rec.Validate("Payment Direction", Enum::"TPV Payment Direction"::Outbound);
+                begin
+                    Rec.Validate("Payment Direction", Enum::"TPV Payment Direction"::Outbound);
+                    Rec.Validate(Refund, true);
+                end;
         end;
 
         PaidAmount := SalesHeader.CalculatePaidAmount();
