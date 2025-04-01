@@ -85,6 +85,25 @@ table 90512 "TPV Sales Point Payment Method"
         }
     }
 
+    procedure GetAsFilter(ForSalesPoint: Code[20]) SalesPointPaymentMethods: Text
+    var
+        IsHandled: Boolean;
+    begin
+        OnBeforeGetAsFilter(ForSalesPoint, SalesPointPaymentMethods, IsHandled);
+
+        Rec.SetRange("Sales Point Code", ForSalesPoint);
+        if not Rec.FindSet() then
+            exit;
+
+        repeat
+            SalesPointPaymentMethods += Rec."Payment Method Code" + '|';
+        until Rec.Next() = 0;
+
+        SalesPointPaymentMethods := SalesPointPaymentMethods.TrimEnd('|');
+
+        OnAfterGetAsFilter(ForSalesPoint, SalesPointPaymentMethods);
+    end;
+
     local procedure CheckGLAcc(AccNo: Code[20])
     var
         GLAcc: Record "G/L Account";
@@ -95,4 +114,18 @@ table 90512 "TPV Sales Point Payment Method"
             GLAcc.TestField("Direct Posting", true);
         end;
     end;
+
+    #region Integration Events
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeGetAsFilter(SalesPoint: Code[20]; var SalesPointPaymentMethods: Text; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterGetAsFilter(SalesPoint: Code[20]; var SalesPointPaymentMethods: Text)
+    begin
+    end;
+
+    #endregion Integration Events
 }

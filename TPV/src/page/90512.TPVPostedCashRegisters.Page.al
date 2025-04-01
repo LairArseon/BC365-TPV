@@ -31,4 +31,33 @@ page 90512 "TPV Posted Cash Registers"
             }
         }
     }
+
+    actions
+    {
+        area(Promoted)
+        {
+            actionref(Report_Ref; Report) { }
+        }
+        area(Processing)
+        {
+            action("Report")
+            {
+                Caption = 'Report', Comment = 'ESP="Informe"';
+                ApplicationArea = All;
+                Image = Report;
+
+                trigger OnAction()
+                var
+                    TPVPostedCashRegister: Record "TPV Posted Cash Register";
+                    TPVCashRegisterReport: Report "TPV Cash Register Report";
+                begin
+                    CurrPage.SetSelectionFilter(TPVPostedCashRegister);
+                    TPVCashRegisterReport.SetTableView(TPVPostedCashRegister);
+                    TPVCashRegisterReport.Run();
+                end;
+            }
+
+
+        }
+    }
 }
