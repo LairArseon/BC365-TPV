@@ -72,6 +72,8 @@ page 90510 "TPV BC Payment"
         if IsHandled then
             exit;
 
+        CreateCashRegisterIfNotExist(Rec);
+
         TPVPaymentProcess := ProcessImplementation;
         TPVPaymentProcess.PostPaymentLine(Rec);
 
@@ -87,6 +89,23 @@ page 90510 "TPV BC Payment"
             Error('You must select a Sales Point')
         else
             Rec.Modify();
+    end;
+
+    local procedure CreateCashRegisterIfNotExist(var Rec: Record "TPV Payment Line Buffer" temporary)
+    var
+        TPVCashRegister: Record "TPV Cash Register";
+        IsHandled: Boolean;
+    begin
+        OnBeforeCreateCashRegisterIfNotExist(Rec, IsHandled);
+        if IsHandled then
+            exit;
+
+        if TPVCashRegister.Get(Rec."Sales Point") then
+            exit;
+
+        TPVCashRegister.InitDayRecord(WorkDate(), Rec."Sales Point");
+
+        OnAfterCreateCashRegisterIfNotExist(Rec);
     end;
 
     #region Integration Events
@@ -148,6 +167,16 @@ page 90510 "TPV BC Payment"
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterPostPayment()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeCreateCashRegisterIfNotExist(var Rec: Record "TPV Payment Line Buffer" temporary; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCreateCashRegisterIfNotExist(var Rec: Record "TPV Payment Line Buffer" temporary)
     begin
     end;
 

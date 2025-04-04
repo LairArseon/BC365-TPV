@@ -122,6 +122,9 @@ report 90500 "TPV Cash Register Report"
         CustLedgerEntry, CustLedgerEntry2 : Record "Cust. Ledger Entry";
         SalesHeader: Record "Sales Header";
         SalesInvoiceHeader: Record "Sales Invoice Header";
+        TransactionType: Enum "TPV Daily Transaction Type";
+        DocumentNo: Code[20];
+        Amount: Decimal;
     begin
         // Search for all payments and refunds
         CustLedgerEntry.SetFilter("Posting Date", PostingDateFilter);
@@ -130,52 +133,68 @@ report 90500 "TPV Cash Register Report"
         if CustLedgerEntry.FindSet() then
             repeat
                 CustLedgerEntry.CalcFields("Amount (LCY)");
-                EntryNo += 1;
-                tempTPVDailyCashReportBuffer.Init();
-                tempTPVDailyCashReportBuffer."No." := EntryNo;
-                tempTPVDailyCashReportBuffer."Posting Date" := CustLedgerEntry."Posting Date";
-                tempTPVDailyCashReportBuffer."Customer No." := CustLedgerEntry."Customer No.";
-                tempTPVDailyCashReportBuffer."Customer Name" := CustLedgerEntry."Customer Name";
-                tempTPVDailyCashReportBuffer."Payment Method" := CustLedgerEntry."Payment Method Code";
-                tempTPVDailyCashReportBuffer.Insert();
 
                 case CustLedgerEntry."Document Type" of
                     Enum::"Gen. Journal Document Type"::Payment:
                         begin
                             if CustLedgerEntry."Closed by Entry No." = 0 then begin
-                                tempTPVDailyCashReportBuffer."Transaction Type" := Enum::"TPV Daily Transaction Type"::"Order Charge";
-                                tempTPVDailyCashReportBuffer."Document No." := CustLedgerEntry."Payment Reference";
+                                TransactionType := Enum::"TPV Daily Transaction Type"::"Order Charge";
+                                DocumentNo := CustLedgerEntry."Payment Reference";
 
                                 if SalesHeader.Get(Enum::"Sales Document Type"::Order, CustLedgerEntry."Payment Reference") then begin
                                     SalesHeader.CalcFields("Amount Including VAT");
-                                    tempTPVDailyCashReportBuffer.Amount := SalesHeader."Amount Including VAT";
+                                    Amount := SalesHeader."Amount Including VAT";
                                 end;
 
                             end else begin
                                 CustLedgerEntry2.Get(CustLedgerEntry."Closed by Entry No.");
 
                                 if CustLedgerEntry2."Posting Date" = CustLedgerEntry."Posting Date" then
-                                    tempTPVDailyCashReportBuffer."Transaction Type" := Enum::"TPV Daily Transaction Type"::"Invoice Charge"
+                                    TransactionType := Enum::"TPV Daily Transaction Type"::"Invoice Charge"
                                 else
-                                    tempTPVDailyCashReportBuffer."Transaction Type" := Enum::"TPV Daily Transaction Type"::"Older Invoice Charge";
+                                    TransactionType := Enum::"TPV Daily Transaction Type"::"Older Invoice Charge";
 
-                                tempTPVDailyCashReportBuffer."Document No." := CustLedgerEntry2."Document No.";
+                                DocumentNo := CustLedgerEntry2."Document No.";
 
                                 if SalesInvoiceHeader.Get(CustLedgerEntry2."Document No.") then begin
                                     SalesHeader.CalcFields("Amount Including VAT");
-                                    tempTPVDailyCashReportBuffer.Amount := SalesHeader."Amount Including VAT";
+                                    Amount := SalesHeader."Amount Including VAT";
                                 end;
                             end;
                         end;
                     Enum::"Gen. Journal Document Type"::Refund:
                         begin
-                            tempTPVDailyCashReportBuffer."Transaction Type" := Enum::"TPV Daily Transaction Type"::Chargeback;
-                            tempTPVDailyCashReportBuffer."Document No." := CustLedgerEntry."Payment Reference";
+                            TransactionType := Enum::"TPV Daily Transaction Type"::Chargeback;
+                            DocumentNo := CustLedgerEntry."Payment Reference";
                         end;
                 end;
 
-                tempTPVDailyCashReportBuffer."Paid Amount" := CustLedgerEntry."Amount (LCY)" * -1; // Payments are negative and refunds positive, we change it like this
+                tempTPVDailyCashReportBuffer.SetRange("Posting Date", CustLedgerEntry."Posting Date");
+                tempTPVDailyCashReportBuffer.SetRange("Customer No.", CustLedgerEntry."Customer No.");
+                tempTPVDailyCashReportBuffer.SetRange("Transaction Type", TransactionType);
+                tempTPVDailyCashReportBuffer.SetRange("Document No.", DocumentNo);
+                tempTPVDailyCashReportBuffer.SetRange("Payment Method", CustLedgerEntry."Payment Method Code");
+                if not tempTPVDailyCashReportBuffer.FindFirst() then begin
 
+                    // If there's already a line for that document but a different payment method ignore the value of the document
+                    tempTPVDailyCashReportBuffer.SetRange("Payment Method");
+                    if tempTPVDailyCashReportBuffer.FindFirst() then
+                        Amount := 0;
+
+                    EntryNo += 1;
+                    tempTPVDailyCashReportBuffer.Init();
+                    tempTPVDailyCashReportBuffer."No." := EntryNo;
+                    tempTPVDailyCashReportBuffer."Posting Date" := CustLedgerEntry."Posting Date";
+                    tempTPVDailyCashReportBuffer."Customer No." := CustLedgerEntry."Customer No.";
+                    tempTPVDailyCashReportBuffer."Customer Name" := CustLedgerEntry."Customer Name";
+                    tempTPVDailyCashReportBuffer."Payment Method" := CustLedgerEntry."Payment Method Code";
+                    tempTPVDailyCashReportBuffer."Document No." := DocumentNo;
+                    tempTPVDailyCashReportBuffer."Transaction Type" := TransactionType;
+                    tempTPVDailyCashReportBuffer.Amount := Amount;
+                    tempTPVDailyCashReportBuffer.Insert();
+                end;
+
+                tempTPVDailyCashReportBuffer."Paid Amount" += CustLedgerEntry."Amount (LCY)" * -1; // Payments are negative and refunds positive, we change it like this
                 tempTPVDailyCashReportBuffer.Modify();
 
             until CustLedgerEntry.Next() = 0;

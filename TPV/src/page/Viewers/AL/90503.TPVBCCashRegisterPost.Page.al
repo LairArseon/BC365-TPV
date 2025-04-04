@@ -18,10 +18,17 @@ page 90503 "TPV BC Cash Register Post"
                     MultiLine = true;
                 }
                 field("Total Tender Amount (LCY)"; Rec."Total Tender Amount (LCY)") { }
+                field("Paid Cash"; Rec.CalcCashPaymetsTotal())
+                {
+                    Caption = 'Total Cash Payments', Comment = 'ESP="Total pagos efectivo"';
+                }
                 field("Remaining Tender Amount (LCY)"; Rec."Remaining Tender Amount (LCY)") { }
                 field("Posting Date"; Rec."Posting Date") { }
                 field("Payment Terminal Amount"; Rec."Payment Terminal Amount") { }
-                field("Paid Terminal Amount"; Rec.CalcTerminalPaymetsTotal()) { }
+                field("Paid Terminal Amount"; Rec.CalcTerminalPaymetsTotal())
+                {
+                    Caption = 'Total Card Payments', Comment = 'ESP="Total pagos tarjeta"';
+                }
             }
             part(TenderLines; "TPV BC Tender Line Part")
             {
@@ -86,7 +93,7 @@ page 90503 "TPV BC Cash Register Post"
         RecSet := true;
 
         if not Rec.Get(CashRegisterNo) then
-            InitDayRecord(CurrentDate, CashRegisterNo);
+            Rec.InitDayRecord(CurrentDate, CashRegisterNo);
 
         ValidateTenderLines(Rec);
     end;
@@ -103,69 +110,6 @@ page 90503 "TPV BC Cash Register Post"
         Codeunit.Run(Codeunit::"TPV Cash Register - Post", Rec);
 
         OnAfterPostCashRegister(PostedCashRegister);
-    end;
-
-    local procedure InitDayRecord(CurrentDate: Date; CashRegisterNo: Code[20])
-    var
-        TPVPostedCashRegister: Record "TPV Posted Cash Register";
-        InitTime: Time;
-        IsHandled: Boolean;
-    begin
-        OnBeforeInitDayRecord(IsHandled);
-        if IsHandled then
-            exit;
-
-        InitTime := Time();
-
-        Rec.Init();
-        Rec.Validate("No.", CashRegisterNo);
-        Rec.Insert(true);
-
-        Rec.Validate("Posting Date", CurrentDate);
-        Rec.Validate("From Time", InitTime);
-        Rec.Modify(true);
-
-        TPVPostedCashRegister.SetRange("No.", CashRegisterNo);
-        if TPVPostedCashRegister.FindLast() then
-            if not TPVPostedCashRegister."Emptied on Post" then
-                TPVPostedCashRegister.ReactivatePostedTenderLines(Rec)
-            else
-                CreateBaseTenderLines(Rec)
-        else
-            CreateBaseTenderLines(Rec);
-
-        OnAfterInitDayRecord();
-    end;
-
-    local procedure CreateBaseTenderLines(TPVCashRegister: Record "TPV Cash Register")
-    var
-        TPVSalesPointTender: Record "TPV Sales Point - Tender";
-        TPVTenderLine: Record "TPV Tender Line";
-        LineNo: Integer;
-        IsHandled: Boolean;
-    begin
-        OnBeforeCreateBaseTenderLines(IsHandled);
-        if IsHandled then
-            exit;
-
-        LineNo := 10000;
-
-        TPVSalesPointTender.SetRange("Sales Point Code", TPVCashRegister."No.");
-        if TPVSalesPointTender.FindSet() then
-            repeat
-                TPVTenderLine.Init();
-                TPVTenderLine.Validate("Cash Register No.", TPVSalesPointTender."Sales Point Code");
-                TPVTenderLine.Validate("From Time", TPVCashRegister."From Time");
-                TPVTenderLine.Validate("Currency Code", TPVSalesPointTender."Currency Code");
-                TPVTenderLine.Validate("Tender Type", TPVSalesPointTender."Tender Type");
-                TPVTenderLine.Validate("Tender Code", TPVSalesPointTender."Tender Code");
-                TPVTenderLine.Insert(true);
-                LineNo += 10000;
-
-            until TPVSalesPointTender.Next() = 0;
-
-
-        OnAfterCreateBaseTenderLines();
     end;
 
     local procedure ValidateTenderLines(TPVCashRegister: Record "TPV Cash Register")
@@ -197,32 +141,12 @@ page 90503 "TPV BC Cash Register Post"
     #region Integration Events
 
     [IntegrationEvent(false, false)]
-    local procedure OnBeforeInitDayRecord(var IsHandled: Boolean)
-    begin
-    end;
-
-    [IntegrationEvent(false, false)]
-    local procedure OnAfterInitDayRecord()
-    begin
-    end;
-
-    [IntegrationEvent(false, false)]
     local procedure OnBeforePostCashRegister(var PostingCodeunit: Integer; var Rec: Record "TPV Cash Register")
     begin
     end;
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterPostCashRegister(var PostedCashRegister: Code[20])
-    begin
-    end;
-
-    [IntegrationEvent(false, false)]
-    local procedure OnBeforeCreateBaseTenderLines(var IsHandled: Boolean)
-    begin
-    end;
-
-    [IntegrationEvent(false, false)]
-    local procedure OnAfterCreateBaseTenderLines()
     begin
     end;
 

@@ -89,6 +89,69 @@ table 90503 "TPV Cash Register"
         TPVDataManagement.Serialize(RecRef, CashRegisterJson);
     end;
 
+    procedure InitDayRecord(CurrentDate: Date; CashRegisterNo: Code[20])
+    var
+        TPVPostedCashRegister: Record "TPV Posted Cash Register";
+        InitTime: Time;
+        IsHandled: Boolean;
+    begin
+        OnBeforeInitDayRecord(IsHandled);
+        if IsHandled then
+            exit;
+
+        InitTime := Time();
+
+        Rec.Init();
+        Rec.Validate("No.", CashRegisterNo);
+        Rec.Insert(true);
+
+        Rec.Validate("Posting Date", CurrentDate);
+        Rec.Validate("From Time", InitTime);
+        Rec.Modify(true);
+
+        TPVPostedCashRegister.SetRange("No.", CashRegisterNo);
+        if TPVPostedCashRegister.FindLast() then
+            if not TPVPostedCashRegister."Emptied on Post" then
+                TPVPostedCashRegister.ReactivatePostedTenderLines(Rec)
+            else
+                CreateBaseTenderLines(Rec)
+        else
+            CreateBaseTenderLines(Rec);
+
+        OnAfterInitDayRecord();
+    end;
+
+    local procedure CreateBaseTenderLines(TPVCashRegister: Record "TPV Cash Register")
+    var
+        TPVSalesPointTender: Record "TPV Sales Point - Tender";
+        TPVTenderLine: Record "TPV Tender Line";
+        LineNo: Integer;
+        IsHandled: Boolean;
+    begin
+        OnBeforeCreateBaseTenderLines(IsHandled);
+        if IsHandled then
+            exit;
+
+        LineNo := 10000;
+
+        TPVSalesPointTender.SetRange("Sales Point Code", TPVCashRegister."No.");
+        if TPVSalesPointTender.FindSet() then
+            repeat
+                TPVTenderLine.Init();
+                TPVTenderLine.Validate("Cash Register No.", TPVSalesPointTender."Sales Point Code");
+                TPVTenderLine.Validate("From Time", TPVCashRegister."From Time");
+                TPVTenderLine.Validate("Currency Code", TPVSalesPointTender."Currency Code");
+                TPVTenderLine.Validate("Tender Type", TPVSalesPointTender."Tender Type");
+                TPVTenderLine.Validate("Tender Code", TPVSalesPointTender."Tender Code");
+                TPVTenderLine.Insert(true);
+                LineNo += 10000;
+
+            until TPVSalesPointTender.Next() = 0;
+
+
+        OnAfterCreateBaseTenderLines();
+    end;
+
     procedure CalcTerminalPaymetsTotal() TotalPaid: Decimal
     var
         TPVSalesPointPaymentMethod: Record "TPV Sales Point Payment Method";
@@ -112,15 +175,66 @@ table 90503 "TPV Cash Register"
 
         TPVPostedPaymentLine.SetRange("Sales Point", Rec."No.");
         TPVPostedPaymentLine.SetRange("Posting Date", Rec."Posting Date");
-        TPVPostedPaymentLine.SetRange("Posting Time", Rec."From Time", Time());
+        TPVPostedPaymentLine.SetRange("Posting Time", 0T, Time()); // TODO revisar la fecha de creacion de la caja
         TPVPostedPaymentLine.SetFilter("Payment Method", TerminalPaymentFilter);
-        TPVPostedPaymentLine.CalcSums("Amount Paid");
-        TotalPaid := TPVPostedPaymentLine."Amount Paid";
+        TPVPostedPaymentLine.CalcSums("Amount");
+        TotalPaid := TPVPostedPaymentLine."Amount";
 
         OnAfterCalcTerminalPaymetsTotal(TotalPaid);
     end;
 
+    procedure CalcCashPaymetsTotal() TotalPaid: Decimal
+    var
+        TPVSalesPointPaymentMethod: Record "TPV Sales Point Payment Method";
+        TPVPostedPaymentLine: Record "TPV Posted Payment Line";
+        TerminalPaymentFilter: Text;
+        IsHandled: Boolean;
+    begin
+        OnBeforeCalcCashPaymetsTotal(TotalPaid, IsHandled);
+        if IsHandled then
+            exit;
+
+        TPVSalesPointPaymentMethod.SetRange("Sales Point Code", Rec."No.");
+        TPVSalesPointPaymentMethod.SetRange("Applies Cash Payment Limit", true);
+        if TPVSalesPointPaymentMethod.IsEmpty then
+            exit;
+        TPVSalesPointPaymentMethod.FindSet();
+        repeat
+            TerminalPaymentFilter += TPVSalesPointPaymentMethod."Payment Method Code" + '|';
+        until TPVSalesPointPaymentMethod.Next() = 0;
+        TerminalPaymentFilter := TerminalPaymentFilter.TrimEnd('|');
+
+        TPVPostedPaymentLine.SetRange("Sales Point", Rec."No.");
+        TPVPostedPaymentLine.SetRange("Posting Date", Rec."Posting Date");
+        TPVPostedPaymentLine.SetRange("Posting Time", 0T, Time()); // TODO revisar la fecha de creacion de la caja
+        TPVPostedPaymentLine.SetFilter("Payment Method", TerminalPaymentFilter);
+        TPVPostedPaymentLine.CalcSums("Amount");
+        TotalPaid := TPVPostedPaymentLine."Amount";
+
+        OnAfterCalcCashPaymetsTotal(TotalPaid);
+    end;
+
     #region Integration Events
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeInitDayRecord(var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterInitDayRecord()
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeCreateBaseTenderLines(var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCreateBaseTenderLines()
+    begin
+    end;
 
     [IntegrationEvent(false, false)]
     local procedure OnBeforeCalcTerminalPaymetsTotal(var TotalPaid: Decimal; var IsHandled: Boolean)
@@ -129,6 +243,16 @@ table 90503 "TPV Cash Register"
 
     [IntegrationEvent(false, false)]
     local procedure OnAfterCalcTerminalPaymetsTotal(var TotalPaid: Decimal)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnBeforeCalcCashPaymetsTotal(var TotalPaid: Decimal; var IsHandled: Boolean)
+    begin
+    end;
+
+    [IntegrationEvent(false, false)]
+    local procedure OnAfterCalcCashPaymetsTotal(var TotalPaid: Decimal)
     begin
     end;
 
